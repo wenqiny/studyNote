@@ -80,3 +80,15 @@ Time elapsed for same_address: 0.121 ms
 ```
 
 We could see for the full_conflict take slowest speed.
+
+
+### Register bank conflict
+According to this [paper](https://arxiv.org/pdf/1804.06826), it said there is a concept called register bank conflict in GPU.
+
+GPU will divide all registers into two banks, like `(R0, R2 ...)` is in a bank, and `(R1, R3, ...)` is in another bank.
+
+For a **FFMA** inst, it utilize 3 register as its input like `FFMA R16, R12, R80, R16`, all of `R16`, `R12` and `R80` is in a same bank, each thread could load **64 bits** at most in a cycle (only **2 registers**, each register is **32 bits**), so this instruction may suffer from bank conflict.
+
+The above paper proposed to modify the instruction as `FFMA R17, R12, R80, R17`, we could see it loads data from two banks, hence it will improve performance.
+
+The papaer is based on **Volta** GPU architecture, I didn't know the latest GPU's behaviors.
