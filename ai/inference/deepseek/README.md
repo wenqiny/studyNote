@@ -24,6 +24,7 @@ MLA was used for lossy compress the $Q,\ K,\ V$ (they called **down-project**), 
     $l$ is the number of one transformer layers.
     $n_g$ is the number of group key/value heads.
 2. Matrix multiple in convert the hidden state $H$ into the $K,\ V$ (omit the RoPE matrix).
+
 $$
 \begin{align*}
 \frac{\text{MLA ops}}{\text{MHA ops}}
@@ -32,7 +33,7 @@ $$
 \end{align*}
 $$
 
-    The $\frac{d_c}{n_hd_h}$ is the compress ratio ($<1$), so we could image it also reduce the computation for matrix multiply.
+The $\frac{d_c}{n_hd_h}$ is the compress ratio ($<1$), so we could image it also reduce the computation for matrix multiply.
 
 ### MoE
 MoE applies after the attention, it just pick top k experts for doing FFN (feed-forward network).
