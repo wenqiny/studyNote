@@ -1,0 +1,268 @@
+digraph G {
+  compound = true;
+  subgraph cluster_1 {
+    v2 [label = " ", shape = plain];
+    label = "builtin.module : ()\lttg.num-ctas: 1 : i32\lttg.num-warps: 8 : i32\lttg.target: \"cuda:86\"\lttg.threads-per-warp: 32 : i32\l";
+    subgraph cluster_3 {
+      v4 [label = " ", shape = plain];
+      label = "";
+      subgraph cluster_5 {
+        v6 [label = " ", shape = plain];
+        label = "tt.func : ()\larg_attrs: [\{tt.divisibility = ...\lfunction_type: (!tt.ptr\<f32\>, !tt.p...\lnoinline: false\lsym_name: \"_layer_norm_fwd_fus...\lsym_visibility: \"public\"\l";
+        subgraph cluster_7 {
+          v8 [label = " ", shape = plain];
+          label = "";
+          v9 [label = "<res_arg0> %arg0 !tt.ptr\<f32\>", shape = Mrecord];
+          v10 [label = "<res_arg1> %arg1 !tt.ptr\<f32\>", shape = Mrecord];
+          v11 [label = "<res_arg2> %arg2 !tt.ptr\<f32\>", shape = Mrecord];
+          v12 [label = "<res_arg3> %arg3 !tt.ptr\<f32\>", shape = Mrecord];
+          v13 [label = "<res_arg4> %arg4 !tt.ptr\<f32\>", shape = Mrecord];
+          v14 [label = "<res_arg5> %arg5 !tt.ptr\<f32\>", shape = Mrecord];
+          v15 [label = "<res_arg6> %arg6 i32", shape = Mrecord];
+          v16 [label = "<res_arg7> %arg7 i32", shape = Mrecord];
+          v17 [label = "<res_arg8> %arg8 f32", shape = Mrecord];
+          v18 [fillcolor = "0.000000 0.3 0.95", label = "{arith.constant\l\lvalue: 8192 : i32\l|{<res_c8192_i32> %c8192_i32 i32}}", shape = Mrecord, style = filled];
+          v19 [fillcolor = "0.000000 0.3 0.95", label = "{arith.constant\l\lvalue: 0 : i32\l|{<res_c0_i32> %c0_i32 i32}}", shape = Mrecord, style = filled];
+          v20 [fillcolor = "0.000000 0.3 0.95", label = "{arith.constant\l\lvalue: 1.000000e+00 : f32\l|{<res_cst> %cst f32}}", shape = Mrecord, style = filled];
+          v21 [fillcolor = "0.000000 0.3 0.95", label = "{arith.constant\l\lvalue: dense\<0.000000e+00\> : tensor\<8192xf32, #ttg.blocked\<\{sizePerThread = [4], threadsPerWarp = [32], warpsPerCTA = [8], order = [0]\}\>\>\l|{<res_cst_0> %cst_0 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+          v22 [fillcolor = "0.040000 0.3 0.95", label = "{tt.get_program_id\l\laxis: 0 : i32\l|{<res_0> %0 i32}}", shape = Mrecord, style = filled];
+          v23 [fillcolor = "0.080000 0.3 0.95", label = "{{<arg_0> %0|<arg_arg6> %arg6}|arith.muli\l\loverflowFlags: #arith.overflow\<none...\l|{<res_1> %1 i32}}", shape = Mrecord, style = filled];
+          v24 [fillcolor = "0.120000 0.3 0.95", label = "{{<arg_arg1> %arg1|<arg_1> %1}|tt.addptr\l|{<res_2> %2 !tt.ptr\<f32\>}}", shape = Mrecord, style = filled];
+          v25 [fillcolor = "0.120000 0.3 0.95", label = "{{<arg_arg0> %arg0|<arg_1> %1}|tt.addptr\l|{<res_3> %3 !tt.ptr\<f32\>}}", shape = Mrecord, style = filled];
+          v26 [fillcolor = "0.160000 0.3 0.95", label = "{tt.make_range\l\lend: 8192 : i32\lstart: 0 : i32\l|{<res_4> %4 tensor\<8192xi32, #tt...}}", shape = Mrecord, style = filled];
+          v27 [fillcolor = "0.200000 0.3 0.95", label = "{{<arg_arg7> %arg7}|tt.splat\l|{<res_5> %5 tensor\<8192xi32, #tt...}}", shape = Mrecord, style = filled];
+          v28 [fillcolor = "0.200000 0.3 0.95", label = "{{<arg_3> %3}|tt.splat\l|{<res_6> %6 tensor\<8192x!tt.ptr\<...}}", shape = Mrecord, style = filled];
+          subgraph cluster_29 {
+            v30 [label = " ", shape = plain];
+            label = "scf.for : (tensor<8192xf32, #tt...)\l";
+            subgraph cluster_31 {
+              v32 [label = " ", shape = plain];
+              label = "";
+              v33 [label = "<res_arg9> %arg9 i32", shape = Mrecord];
+              v34 [label = "<res_arg10> %arg10 tensor\<8192xf32, #tt...", shape = Mrecord];
+              v35 [fillcolor = "0.200000 0.3 0.95", label = "{{<arg_arg9> %arg9}|tt.splat\l|{<res_26> %26 tensor\<8192xi32, #tt...}}", shape = Mrecord, style = filled];
+              v36 [fillcolor = "0.240000 0.3 0.95", label = "{{<arg_26> %26|<arg_4> %4}|arith.addi\l\loverflowFlags: #arith.overflow\<none...\l|{<res_27> %27 tensor\<8192xi32, #tt...}}", shape = Mrecord, style = filled];
+              v37 [fillcolor = "0.280000 0.3 0.95", label = "{{<arg_27> %27|<arg_5> %5}|arith.cmpi\l\lpredicate: 2 : i64\l|{<res_28> %28 tensor\<8192xi1, #ttg...}}", shape = Mrecord, style = filled];
+              v38 [fillcolor = "0.120000 0.3 0.95", label = "{{<arg_6> %6|<arg_27> %27}|tt.addptr\l|{<res_29> %29 tensor\<8192x!tt.ptr\<...}}", shape = Mrecord, style = filled];
+              v39 [fillcolor = "0.320000 0.3 0.95", label = "{{<arg_29> %29|<arg_28> %28|<arg_cst_0> %cst_0}|tt.load\l\lboundaryCheck: array\<i32\>\lcache: 1 : i32\levict: 1 : i32\lisVolatile: false\loperandSegmentSizes: array\<i32: 1, 1, 1\>\l|{<res_30> %30 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+              v40 [fillcolor = "0.360000 0.3 0.95", label = "{{<arg_arg10> %arg10|<arg_30> %30}|arith.addf\l\lfastmath: #arith.fastmath\<none...\l|{<res_31> %31 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+              v41 [fillcolor = "0.400000 0.3 0.95", label = "{{<arg_31> %31}|scf.yield\l}", shape = Mrecord, style = filled];
+            }
+          }
+          subgraph cluster_42 {
+            v43 [label = " ", shape = plain];
+            label = "tt.reduce : (f32)\laxis: 0 : i32\l";
+            subgraph cluster_44 {
+              v45 [label = " ", shape = plain];
+              label = "";
+              v46 [label = "<res_arg9> %arg9 f32", shape = Mrecord];
+              v47 [label = "<res_arg10> %arg10 f32", shape = Mrecord];
+              v48 [fillcolor = "0.360000 0.3 0.95", label = "{{<arg_arg9> %arg9|<arg_arg10> %arg10}|arith.addf\l\lfastmath: #arith.fastmath\<none...\l|{<res_26> %26 f32}}", shape = Mrecord, style = filled];
+              v49 [fillcolor = "0.480000 0.3 0.95", label = "{{<arg_26> %26}|tt.reduce.return\l}", shape = Mrecord, style = filled];
+            }
+          }
+          v50 [fillcolor = "0.560000 0.3 0.95", label = "{{<arg_arg7> %arg7}|arith.sitofp\l|{<res_9> %9 f32}}", shape = Mrecord, style = filled];
+          v51 [fillcolor = "0.600000 0.3 0.95", label = "{{<arg_8> %8|<arg_9> %9}|arith.divf\l\lfastmath: #arith.fastmath\<none...\l|{<res_10> %10 f32}}", shape = Mrecord, style = filled];
+          v52 [fillcolor = "0.200000 0.3 0.95", label = "{{<arg_10> %10}|tt.splat\l|{<res_11> %11 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+          subgraph cluster_53 {
+            v54 [label = " ", shape = plain];
+            label = "scf.for : (tensor<8192xf32, #tt...)\l";
+            subgraph cluster_55 {
+              v56 [label = " ", shape = plain];
+              label = "";
+              v57 [label = "<res_arg9> %arg9 i32", shape = Mrecord];
+              v58 [label = "<res_arg10> %arg10 tensor\<8192xf32, #tt...", shape = Mrecord];
+              v59 [fillcolor = "0.200000 0.3 0.95", label = "{{<arg_arg9> %arg9}|tt.splat\l|{<res_26> %26 tensor\<8192xi32, #tt...}}", shape = Mrecord, style = filled];
+              v60 [fillcolor = "0.240000 0.3 0.95", label = "{{<arg_26> %26|<arg_4> %4}|arith.addi\l\loverflowFlags: #arith.overflow\<none...\l|{<res_27> %27 tensor\<8192xi32, #tt...}}", shape = Mrecord, style = filled];
+              v61 [fillcolor = "0.280000 0.3 0.95", label = "{{<arg_27> %27|<arg_5> %5}|arith.cmpi\l\lpredicate: 2 : i64\l|{<res_28> %28 tensor\<8192xi1, #ttg...}}", shape = Mrecord, style = filled];
+              v62 [fillcolor = "0.120000 0.3 0.95", label = "{{<arg_6> %6|<arg_27> %27}|tt.addptr\l|{<res_29> %29 tensor\<8192x!tt.ptr\<...}}", shape = Mrecord, style = filled];
+              v63 [fillcolor = "0.320000 0.3 0.95", label = "{{<arg_29> %29|<arg_28> %28|<arg_cst_0> %cst_0}|tt.load\l\lboundaryCheck: array\<i32\>\lcache: 1 : i32\levict: 1 : i32\lisVolatile: false\loperandSegmentSizes: array\<i32: 1, 1, 1\>\l|{<res_30> %30 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+              v64 [fillcolor = "0.640000 0.3 0.95", label = "{{<arg_30> %30|<arg_11> %11}|arith.subf\l\lfastmath: #arith.fastmath\<none...\l|{<res_31> %31 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+              v65 [fillcolor = "0.680000 0.3 0.95", label = "{{<arg_28> %28|<arg_31> %31|<arg_cst_0> %cst_0}|arith.select\l|{<res_32> %32 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+              v66 [fillcolor = "0.720000 0.3 0.95", label = "{{<arg_32> %32|<arg_32> %32}|arith.mulf\l\lfastmath: #arith.fastmath\<none...\l|{<res_33> %33 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+              v67 [fillcolor = "0.360000 0.3 0.95", label = "{{<arg_arg10> %arg10|<arg_33> %33}|arith.addf\l\lfastmath: #arith.fastmath\<none...\l|{<res_34> %34 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+              v68 [fillcolor = "0.400000 0.3 0.95", label = "{{<arg_34> %34}|scf.yield\l}", shape = Mrecord, style = filled];
+            }
+          }
+          subgraph cluster_69 {
+            v70 [label = " ", shape = plain];
+            label = "tt.reduce : (f32)\laxis: 0 : i32\l";
+            subgraph cluster_71 {
+              v72 [label = " ", shape = plain];
+              label = "";
+              v73 [label = "<res_arg9> %arg9 f32", shape = Mrecord];
+              v74 [label = "<res_arg10> %arg10 f32", shape = Mrecord];
+              v75 [fillcolor = "0.360000 0.3 0.95", label = "{{<arg_arg9> %arg9|<arg_arg10> %arg10}|arith.addf\l\lfastmath: #arith.fastmath\<none...\l|{<res_26> %26 f32}}", shape = Mrecord, style = filled];
+              v76 [fillcolor = "0.480000 0.3 0.95", label = "{{<arg_26> %26}|tt.reduce.return\l}", shape = Mrecord, style = filled];
+            }
+          }
+          v77 [fillcolor = "0.600000 0.3 0.95", label = "{{<arg_13> %13|<arg_9> %9}|arith.divf\l\lfastmath: #arith.fastmath\<none...\l|{<res_14> %14 f32}}", shape = Mrecord, style = filled];
+          v78 [fillcolor = "0.360000 0.3 0.95", label = "{{<arg_14> %14|<arg_arg8> %arg8}|arith.addf\l\lfastmath: #arith.fastmath\<none...\l|{<res_15> %15 f32}}", shape = Mrecord, style = filled];
+          v79 [fillcolor = "0.760000 0.3 0.95", label = "{{<arg_15> %15}|math.sqrt\l\lfastmath: #arith.fastmath\<none...\l|{<res_16> %16 f32}}", shape = Mrecord, style = filled];
+          v80 [fillcolor = "0.600000 0.3 0.95", label = "{{<arg_cst> %cst|<arg_16> %16}|arith.divf\l\lfastmath: #arith.fastmath\<none...\l|{<res_17> %17 f32}}", shape = Mrecord, style = filled];
+          v81 [fillcolor = "0.120000 0.3 0.95", label = "{{<arg_arg5> %arg5|<arg_0> %0}|tt.addptr\l|{<res_18> %18 !tt.ptr\<f32\>}}", shape = Mrecord, style = filled];
+          v82 [fillcolor = "0.800000 0.3 0.95", label = "{{<arg_18> %18|<arg_17> %17}|tt.store\l\lboundaryCheck: array\<i32\>\lcache: 1 : i32\levict: 1 : i32\l}", shape = Mrecord, style = filled];
+          v83 [fillcolor = "0.120000 0.3 0.95", label = "{{<arg_arg4> %arg4|<arg_0> %0}|tt.addptr\l|{<res_19> %19 !tt.ptr\<f32\>}}", shape = Mrecord, style = filled];
+          v84 [fillcolor = "0.800000 0.3 0.95", label = "{{<arg_19> %19|<arg_10> %10}|tt.store\l\lboundaryCheck: array\<i32\>\lcache: 1 : i32\levict: 1 : i32\l}", shape = Mrecord, style = filled];
+          v85 [fillcolor = "0.160000 0.3 0.95", label = "{tt.make_range\l\lend: 8192 : i32\lstart: 0 : i32\l|{<res_20> %20 tensor\<8192xi32, #tt...}}", shape = Mrecord, style = filled];
+          v86 [fillcolor = "0.200000 0.3 0.95", label = "{{<arg_arg7> %arg7}|tt.splat\l|{<res_21> %21 tensor\<8192xi32, #tt...}}", shape = Mrecord, style = filled];
+          v87 [fillcolor = "0.200000 0.3 0.95", label = "{{<arg_arg2> %arg2}|tt.splat\l|{<res_22> %22 tensor\<8192x!tt.ptr\<...}}", shape = Mrecord, style = filled];
+          v88 [fillcolor = "0.200000 0.3 0.95", label = "{{<arg_arg3> %arg3}|tt.splat\l|{<res_23> %23 tensor\<8192x!tt.ptr\<...}}", shape = Mrecord, style = filled];
+          v89 [fillcolor = "0.200000 0.3 0.95", label = "{{<arg_17> %17}|tt.splat\l|{<res_24> %24 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+          v90 [fillcolor = "0.200000 0.3 0.95", label = "{{<arg_2> %2}|tt.splat\l|{<res_25> %25 tensor\<8192x!tt.ptr\<...}}", shape = Mrecord, style = filled];
+          subgraph cluster_91 {
+            v92 [label = " ", shape = plain];
+            label = "scf.for : ()\l";
+            subgraph cluster_93 {
+              v94 [label = " ", shape = plain];
+              label = "";
+              v95 [label = "<res_arg9> %arg9 i32", shape = Mrecord];
+              v96 [fillcolor = "0.200000 0.3 0.95", label = "{{<arg_arg9> %arg9}|tt.splat\l|{<res_26> %26 tensor\<8192xi32, #tt...}}", shape = Mrecord, style = filled];
+              v97 [fillcolor = "0.200000 0.3 0.95", label = "{{<arg_arg9> %arg9}|tt.splat\l|{<res_27> %27 tensor\<8192xi32, #tt...}}", shape = Mrecord, style = filled];
+              v98 [fillcolor = "0.240000 0.3 0.95", label = "{{<arg_26> %26|<arg_4> %4}|arith.addi\l\loverflowFlags: #arith.overflow\<none...\l|{<res_28> %28 tensor\<8192xi32, #tt...}}", shape = Mrecord, style = filled];
+              v99 [fillcolor = "0.240000 0.3 0.95", label = "{{<arg_27> %27|<arg_20> %20}|arith.addi\l\loverflowFlags: #arith.overflow\<none...\l|{<res_29> %29 tensor\<8192xi32, #tt...}}", shape = Mrecord, style = filled];
+              v100 [fillcolor = "0.280000 0.3 0.95", label = "{{<arg_28> %28|<arg_5> %5}|arith.cmpi\l\lpredicate: 2 : i64\l|{<res_30> %30 tensor\<8192xi1, #ttg...}}", shape = Mrecord, style = filled];
+              v101 [fillcolor = "0.280000 0.3 0.95", label = "{{<arg_29> %29|<arg_21> %21}|arith.cmpi\l\lpredicate: 2 : i64\l|{<res_31> %31 tensor\<8192xi1, #ttg...}}", shape = Mrecord, style = filled];
+              v102 [fillcolor = "0.120000 0.3 0.95", label = "{{<arg_22> %22|<arg_28> %28}|tt.addptr\l|{<res_32> %32 tensor\<8192x!tt.ptr\<...}}", shape = Mrecord, style = filled];
+              v103 [fillcolor = "0.320000 0.3 0.95", label = "{{<arg_32> %32|<arg_30> %30}|tt.load\l\lboundaryCheck: array\<i32\>\lcache: 1 : i32\levict: 1 : i32\lisVolatile: false\loperandSegmentSizes: array\<i32: 1, 1, 0\>\l|{<res_33> %33 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+              v104 [fillcolor = "0.120000 0.3 0.95", label = "{{<arg_23> %23|<arg_28> %28}|tt.addptr\l|{<res_34> %34 tensor\<8192x!tt.ptr\<...}}", shape = Mrecord, style = filled];
+              v105 [fillcolor = "0.320000 0.3 0.95", label = "{{<arg_34> %34|<arg_30> %30}|tt.load\l\lboundaryCheck: array\<i32\>\lcache: 1 : i32\levict: 1 : i32\lisVolatile: false\loperandSegmentSizes: array\<i32: 1, 1, 0\>\l|{<res_35> %35 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+              v106 [fillcolor = "0.120000 0.3 0.95", label = "{{<arg_6> %6|<arg_28> %28}|tt.addptr\l|{<res_36> %36 tensor\<8192x!tt.ptr\<...}}", shape = Mrecord, style = filled];
+              v107 [fillcolor = "0.320000 0.3 0.95", label = "{{<arg_36> %36|<arg_30> %30|<arg_cst_0> %cst_0}|tt.load\l\lboundaryCheck: array\<i32\>\lcache: 1 : i32\levict: 1 : i32\lisVolatile: false\loperandSegmentSizes: array\<i32: 1, 1, 1\>\l|{<res_37> %37 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+              v108 [fillcolor = "0.640000 0.3 0.95", label = "{{<arg_37> %37|<arg_11> %11}|arith.subf\l\lfastmath: #arith.fastmath\<none...\l|{<res_38> %38 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+              v109 [fillcolor = "0.720000 0.3 0.95", label = "{{<arg_38> %38|<arg_24> %24}|arith.mulf\l\lfastmath: #arith.fastmath\<none...\l|{<res_39> %39 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+              v110 [fillcolor = "0.720000 0.3 0.95", label = "{{<arg_39> %39|<arg_33> %33}|arith.mulf\l\lfastmath: #arith.fastmath\<none...\l|{<res_40> %40 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+              v111 [fillcolor = "0.360000 0.3 0.95", label = "{{<arg_40> %40|<arg_35> %35}|arith.addf\l\lfastmath: #arith.fastmath\<none...\l|{<res_41> %41 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+              v112 [fillcolor = "0.120000 0.3 0.95", label = "{{<arg_25> %25|<arg_29> %29}|tt.addptr\l|{<res_42> %42 tensor\<8192x!tt.ptr\<...}}", shape = Mrecord, style = filled];
+              v113 [fillcolor = "0.840000 0.3 0.95", label = "{{<arg_41> %41}|ttg.convert_layout\l|{<res_43> %43 tensor\<8192xf32, #tt...}}", shape = Mrecord, style = filled];
+              v114 [fillcolor = "0.800000 0.3 0.95", label = "{{<arg_42> %42|<arg_43> %43|<arg_31> %31}|tt.store\l\lboundaryCheck: array\<i32\>\lcache: 1 : i32\levict: 1 : i32\l}", shape = Mrecord, style = filled];
+              v115 [fillcolor = "0.400000 0.3 0.95", label = "{scf.yield\l}", shape = Mrecord, style = filled];
+            }
+          }
+          v116 [fillcolor = "0.880000 0.3 0.95", label = "{tt.return\l}", shape = Mrecord, style = filled];
+        }
+      }
+    }
+  }
+  v22:res_0:s -> v23:arg_0:n[style = solid];
+  v15:res_arg6:s -> v23:arg_arg6:n[style = solid];
+  v10:res_arg1:s -> v24:arg_arg1:n[style = solid];
+  v23:res_1:s -> v24:arg_1:n[style = solid];
+  v9:res_arg0:s -> v25:arg_arg0:n[style = solid];
+  v23:res_1:s -> v25:arg_1:n[style = solid];
+  v16:res_arg7:s -> v27:arg_arg7:n[style = solid];
+  v25:res_3:s -> v28:arg_3:n[style = solid];
+  v33:res_arg9:s -> v35:arg_arg9:n[style = solid];
+  v35:res_26:s -> v36:arg_26:n[style = solid];
+  v26:res_4:s -> v36:arg_4:n[style = solid];
+  v36:res_27:s -> v37:arg_27:n[style = solid];
+  v27:res_5:s -> v37:arg_5:n[style = solid];
+  v28:res_6:s -> v38:arg_6:n[style = solid];
+  v36:res_27:s -> v38:arg_27:n[style = solid];
+  v38:res_29:s -> v39:arg_29:n[style = solid];
+  v37:res_28:s -> v39:arg_28:n[style = solid];
+  v21:res_cst_0:s -> v39:arg_cst_0:n[style = solid];
+  v34:res_arg10:s -> v40:arg_arg10:n[style = solid];
+  v39:res_30:s -> v40:arg_30:n[style = solid];
+  v40:res_31:s -> v41:arg_31:n[style = solid];
+  v19:res_c0_i32:s -> v30[lhead = cluster_29, style = solid];
+  v16:res_arg7:s -> v30[lhead = cluster_29, style = solid];
+  v18:res_c8192_i32:s -> v30[lhead = cluster_29, style = solid];
+  v21:res_cst_0:s -> v30[lhead = cluster_29, style = solid];
+  v46:res_arg9:s -> v48:arg_arg9:n[style = solid];
+  v47:res_arg10:s -> v48:arg_arg10:n[style = solid];
+  v48:res_26:s -> v49:arg_26:n[style = solid];
+  v30 -> v43[lhead = cluster_42, ltail = cluster_29, style = solid];
+  v16:res_arg7:s -> v50:arg_arg7:n[style = solid];
+  v43 -> v51:arg_8:n[ltail = cluster_42, style = solid];
+  v50:res_9:s -> v51:arg_9:n[style = solid];
+  v51:res_10:s -> v52:arg_10:n[style = solid];
+  v57:res_arg9:s -> v59:arg_arg9:n[style = solid];
+  v59:res_26:s -> v60:arg_26:n[style = solid];
+  v26:res_4:s -> v60:arg_4:n[style = solid];
+  v60:res_27:s -> v61:arg_27:n[style = solid];
+  v27:res_5:s -> v61:arg_5:n[style = solid];
+  v28:res_6:s -> v62:arg_6:n[style = solid];
+  v60:res_27:s -> v62:arg_27:n[style = solid];
+  v62:res_29:s -> v63:arg_29:n[style = solid];
+  v61:res_28:s -> v63:arg_28:n[style = solid];
+  v21:res_cst_0:s -> v63:arg_cst_0:n[style = solid];
+  v63:res_30:s -> v64:arg_30:n[style = solid];
+  v52:res_11:s -> v64:arg_11:n[style = solid];
+  v61:res_28:s -> v65:arg_28:n[style = solid];
+  v64:res_31:s -> v65:arg_31:n[style = solid];
+  v21:res_cst_0:s -> v65:arg_cst_0:n[style = solid];
+  v65:res_32:s -> v66:arg_32:n[style = solid];
+  v65:res_32:s -> v66:arg_32:n[style = solid];
+  v58:res_arg10:s -> v67:arg_arg10:n[style = solid];
+  v66:res_33:s -> v67:arg_33:n[style = solid];
+  v67:res_34:s -> v68:arg_34:n[style = solid];
+  v19:res_c0_i32:s -> v54[lhead = cluster_53, style = solid];
+  v16:res_arg7:s -> v54[lhead = cluster_53, style = solid];
+  v18:res_c8192_i32:s -> v54[lhead = cluster_53, style = solid];
+  v21:res_cst_0:s -> v54[lhead = cluster_53, style = solid];
+  v73:res_arg9:s -> v75:arg_arg9:n[style = solid];
+  v74:res_arg10:s -> v75:arg_arg10:n[style = solid];
+  v75:res_26:s -> v76:arg_26:n[style = solid];
+  v54 -> v70[lhead = cluster_69, ltail = cluster_53, style = solid];
+  v70 -> v77:arg_13:n[ltail = cluster_69, style = solid];
+  v50:res_9:s -> v77:arg_9:n[style = solid];
+  v77:res_14:s -> v78:arg_14:n[style = solid];
+  v17:res_arg8:s -> v78:arg_arg8:n[style = solid];
+  v78:res_15:s -> v79:arg_15:n[style = solid];
+  v20:res_cst:s -> v80:arg_cst:n[style = solid];
+  v79:res_16:s -> v80:arg_16:n[style = solid];
+  v14:res_arg5:s -> v81:arg_arg5:n[style = solid];
+  v22:res_0:s -> v81:arg_0:n[style = solid];
+  v81:res_18:s -> v82:arg_18:n[style = solid];
+  v80:res_17:s -> v82:arg_17:n[style = solid];
+  v13:res_arg4:s -> v83:arg_arg4:n[style = solid];
+  v22:res_0:s -> v83:arg_0:n[style = solid];
+  v83:res_19:s -> v84:arg_19:n[style = solid];
+  v51:res_10:s -> v84:arg_10:n[style = solid];
+  v16:res_arg7:s -> v86:arg_arg7:n[style = solid];
+  v11:res_arg2:s -> v87:arg_arg2:n[style = solid];
+  v12:res_arg3:s -> v88:arg_arg3:n[style = solid];
+  v80:res_17:s -> v89:arg_17:n[style = solid];
+  v24:res_2:s -> v90:arg_2:n[style = solid];
+  v95:res_arg9:s -> v96:arg_arg9:n[style = solid];
+  v95:res_arg9:s -> v97:arg_arg9:n[style = solid];
+  v96:res_26:s -> v98:arg_26:n[style = solid];
+  v26:res_4:s -> v98:arg_4:n[style = solid];
+  v97:res_27:s -> v99:arg_27:n[style = solid];
+  v85:res_20:s -> v99:arg_20:n[style = solid];
+  v98:res_28:s -> v100:arg_28:n[style = solid];
+  v27:res_5:s -> v100:arg_5:n[style = solid];
+  v99:res_29:s -> v101:arg_29:n[style = solid];
+  v86:res_21:s -> v101:arg_21:n[style = solid];
+  v87:res_22:s -> v102:arg_22:n[style = solid];
+  v98:res_28:s -> v102:arg_28:n[style = solid];
+  v102:res_32:s -> v103:arg_32:n[style = solid];
+  v100:res_30:s -> v103:arg_30:n[style = solid];
+  v88:res_23:s -> v104:arg_23:n[style = solid];
+  v98:res_28:s -> v104:arg_28:n[style = solid];
+  v104:res_34:s -> v105:arg_34:n[style = solid];
+  v100:res_30:s -> v105:arg_30:n[style = solid];
+  v28:res_6:s -> v106:arg_6:n[style = solid];
+  v98:res_28:s -> v106:arg_28:n[style = solid];
+  v106:res_36:s -> v107:arg_36:n[style = solid];
+  v100:res_30:s -> v107:arg_30:n[style = solid];
+  v21:res_cst_0:s -> v107:arg_cst_0:n[style = solid];
+  v107:res_37:s -> v108:arg_37:n[style = solid];
+  v52:res_11:s -> v108:arg_11:n[style = solid];
+  v108:res_38:s -> v109:arg_38:n[style = solid];
+  v89:res_24:s -> v109:arg_24:n[style = solid];
+  v109:res_39:s -> v110:arg_39:n[style = solid];
+  v103:res_33:s -> v110:arg_33:n[style = solid];
+  v110:res_40:s -> v111:arg_40:n[style = solid];
+  v105:res_35:s -> v111:arg_35:n[style = solid];
+  v90:res_25:s -> v112:arg_25:n[style = solid];
+  v99:res_29:s -> v112:arg_29:n[style = solid];
+  v111:res_41:s -> v113:arg_41:n[style = solid];
+  v112:res_42:s -> v114:arg_42:n[style = solid];
+  v113:res_43:s -> v114:arg_43:n[style = solid];
+  v101:res_31:s -> v114:arg_31:n[style = solid];
+  v19:res_c0_i32:s -> v92[lhead = cluster_91, style = solid];
+  v16:res_arg7:s -> v92[lhead = cluster_91, style = solid];
+  v18:res_c8192_i32:s -> v92[lhead = cluster_91, style = solid];
+}
