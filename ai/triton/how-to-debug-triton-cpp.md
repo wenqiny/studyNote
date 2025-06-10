@@ -56,3 +56,16 @@ The template for `launch.json` on `vscode` looks like:
     ]
   }
 ```
+
+### Print IR node in gdb / vscode debug console
+
+#### Node
+We could use `op->dump()` in `gdb` or `vs code debug console` to inspect so op, it outputs like:
+```
+"tt.store"(%6040, %6018) <{boundaryCheck = array<i32>, cache = 1 : i32, evict = 1 : i32}> : (tensor<16x2x!tt.ptr<f32>, #ttg.blocked<{sizePerThread = [1, 1], threadsPerWarp = [16, 2], warpsPerCTA = [1, 1], order = [1, 0]}>>, tensor<16x2xf32, #ttg.blocked<{sizePerThread = [1, 1], threadsPerWarp = [16, 2], warpsPerCTA = [1, 1], order = [1, 0]}>>) -> ()
+```
+Make sure it may output the IR into the std out or std err, so it may not in the `vs code debug console`, but in the command line which launch `gdb` in terminal tab on vscode.
+
+#### Operand
+
+If we want to inspect the operand of this IR, like `%6040`, we could use `op->getOperand(0).dump()`.
