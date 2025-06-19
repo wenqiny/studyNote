@@ -9,7 +9,7 @@ The majority implement was at `include/triton/Tools/LinearLayout.h` or `lib/Tool
 ## How it works
 briefly speak, There are **input dims** and **output dims** in linear layout, **input dims** is something like: `"register", "lane", "warp"` (each of them has **a field about size**), and **ouput dims** is something like: `"dim1" and "dim2"` (each of them also has **a field about size**).
 
-Therefore we could have a matrix multiply in $\text{F}_2$ space (the matrix multiply is also slightly different from trandition matrix multiply, pleasee details in the paper mention above) to illustrate the map:
+Therefore we could have a matrix multiply in $\mathbb{F}_2$ space (the matrix multiply is also slightly different from trandition matrix multiply, pleasee details in the paper mention above) to illustrate the map:
 
 $$
 (\sum \log_2\text{OutDimSize}, \sum \log_2\text{InDimSize}) \times (\sum \log_2\text{InDimSize}, 1) = (\sum \log_2\text{OutDimSize}, 1) \tag{1}
@@ -41,7 +41,7 @@ $$
 \end{align*}
 $$
 
-Which means we could use a `(8, 2)` matrix to map **4 registers**(it could be writen by a `(2, 1)` matrix in $\text{F}_2$ space).
+Which means we could use a `(8, 2)` matrix to map **4 registers**(it could be writen by a `(2, 1)` matrix in $\mathbb{F}_2$ space).
 We could write the matrix multiply like ($j$ and $i$ is the **index of the register** in binary format):
 
 $$
@@ -186,7 +186,7 @@ x & 0 & 0 \\
 \end{bmatrix}
 $$
 
-We could see there are **two columns** in $A$, each of them is a container which contains the number of a **scale** to map the input dim to output dim in $\text{F}_2$.
+We could see there are **two columns** in $A$, each of them is a container which contains the number of a **scale** to map the input dim to output dim in $\mathbb{F}_2$.
 
 Let's take first column as an example, we could divded it into two parts: $x$ and $y$, for $y$ part, it's ($A_t^d$ means $t$ column and $d$ means output dim $d$ part):
 
@@ -253,7 +253,7 @@ $$
 \end{align*}
 $$
 
-Which means we could use a `(8, 5)` matrix to map **32 threads**(it could be writen by a `(5, 1)` matrix in $\text{F}_2$ space).
+Which means we could use a `(8, 5)` matrix to map **32 threads**(it could be writen by a `(5, 1)` matrix in $\mathbb{F}_2$ space).
 Just like above **register** case, we could write the matrix multiply like ($a$, $b$, $c$, $d$ and $e$ is the **index of the thread** in binary format):
 
 $$
@@ -376,3 +376,16 @@ The main data structure of `LinearLayout` just contain two feilds:
     For the above **16*16 tensor** case, **outDims** looks like:
     `outDims["dim1"] = 16`,
     `outDims["dim2"] = 16`.
+
+## Diff with Layout
+**Layout** in triton is an `Attribute`, which is a LLVM/MLIR concept to describe how triton would like to access the tensor.
+
+For example:
+```
+(tensor<16x64xf32, #blocked>)
+#blocked = #ttg.blocked<{sizePerThread = [1, 4], threadsPerWarp = [2, 16], warpsPerCTA = [1, 1], order = [1, 0]}>
+```
+
+The shape of the tensor is **(16, 64)**, but the layout ask it to access in  `sizePerThread = [1, 4], threadsPerWarp = [2, 16], warpsPerCTA = [1, 1]`, which means a warp could just access **4 * 32 = 128** scalars.
+
+Therefore, **LinearLayout** came here, **16 * 64 / 128 = 8**, so it ask each thread to use **8 times** register to load the data in the tensor.
