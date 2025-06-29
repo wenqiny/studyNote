@@ -26,3 +26,12 @@ No symbol table is loaded.  Use the "file" command.
 Make breakpoint pending on future shared library load? (y or [n]) y
 Breakpoint 1 (/home/wenqin/study/triton-code/issue-6647.py:27) pending.
 ```
+
+### Note
+Didn't set breakpoint on some SASS inst like:
+```
+SHFL.BFLY PT, R14, R13, 0x10, 0x1f;
+BAR.SYNC.DEFER_BLOCKING 0x0;
+```
+
+It seems they will stuch the gdb, maybe related to sync???
