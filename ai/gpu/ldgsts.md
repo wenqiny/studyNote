@@ -3,6 +3,9 @@
 `ldgsts` is a new feature on `Ampere` and later Nvidia GPU, which means **load global and store shared**, investigate it later.
 
 ### Code
+<details>
+<summary> code </summary>
+
 ```
 #include <iostream>
 #include <cmath>
@@ -91,3 +94,9 @@ int main() {
     return 0;
 }
 ```
+
+</details>
+
+### Performance check list
+1. Shared memory alignment
+   We should keep the shared memory address be aligned with **128 bytes**, which will help us decrease **wavefront** as much as possiable, in **MPK**, there is a case if we modify `constexpr size_t SHARED_INPUT_BUFFER_OFFSET = ZERO_BUFFER_OFFSET + sizeof(T) * 8;` to `constexpr size_t SHARED_INPUT_BUFFER_OFFSET = ZERO_BUFFER_OFFSET + sizeof(T) * 64;` (T is `bfloat16`, its size is 2), we will see **50%** traffic and **75%** wavefront decreasing.  

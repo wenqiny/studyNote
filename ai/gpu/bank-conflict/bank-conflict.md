@@ -13,6 +13,9 @@ Therefore if we ask threads in one warp to access memory in one bank, like **all
 
 ### Code
 For the below code snippet:
+<details>
+<summary>Code</summary>
+
 ```cpp
 #include <stdio.h>
 #include <string>
@@ -171,6 +174,8 @@ int main(){
 }
 ```
 
+</details>
+
 ### Output for float
 its output for `float` is:
 ```
@@ -188,6 +193,7 @@ Time elapsed for same_address: 40.520 ms
 ```
 
 ### Summary
+#### Number of bank conflict
 We could see for the full_conflict take slowest speed, it takes about **4x** regression when we test for `float`, the reason why `half` get a relatively low regression, it's because the size of `half` is smaller than `float`, for a **warp (32 threads)**, please see below table:
 | data type | size of warp access | bank conflict per inst |
 | --------- | ------------------- | ---------------------- |
@@ -196,9 +202,8 @@ We could see for the full_conflict take slowest speed, it takes about **4x** reg
 
 We could see there is just $\frac{15}{31}=0.48$ of bank conflict compare **half** with **float**.
 
-### Access same 4 bytes but for two half
+#### Access same 4 bytes but for two half
 Given **half** type takes 2 bytes, so if we ask two threads in a same warp to access two different **half** elements inside a same **4 bytes** bank, there is also no bank confilt, we could see the output for `half`, it didn't show much regression compare the `no_conflict` with `same_address`, and we could also see there is **0** bank conflict on nsigh compute.
-
 
 ### Register bank conflict
 According to this [paper](https://arxiv.org/pdf/1804.06826), it said there is a concept called register bank conflict in GPU.
