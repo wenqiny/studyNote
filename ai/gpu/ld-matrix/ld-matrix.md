@@ -30,8 +30,60 @@ For a `.x4` case, which means there is 4 `8x8` matrix, the address argument for 
 -------------------------------------------------------
 ```
 
+## How GPU execute ld.matrix
+We could divide this inst into two parts:
+1. Loading from shared memory
+2. Storing data in threads' registers
 
-## Code snippet
+We shouldn't think this inst in a **normal GPU SIMT** way, just like the `mma` inst, we should think the GPU do this inst in a more **ASIC** way, the `ld.matrix` inst was executed in a **unit of warp**, all the data was executed by **the whole warp but not a single thread**.
+
+### Loading from shared memory
+For `ldmatrix.sync.aligned.m8n8.x4.shared.b16 {%0, %1, %2, %3}, [%4]`, it will load **4 * 8 * 8=256** elements, the size of each element is **2 bytes**, so the total load size for this inst is **256*2=512 bytes**, given that the GPU core load data from shared memory in wavefronts (**128 bytes per one**), so this inst will issue **4 wavefronts** at least.
+
+![Wavefront](./pic/wavefront-4.png "4 wavefronts for one ld.matrix.m8n8.x4 inst")
+
+### Storing in threads' registers
+After loading data from shared memory, then it will store the data into register follow a specific rules, it looks like:
+
+![shared-memory-to-register](./pic/shared-mem-to-register.png "Shared memory to registers").
+
+## Swizzling and bank conflicts
+In the above section, we could see this inst will issue 4 wavefront at least, and **each wavefront loads 128 bytes**(`8*8=64 elements, 64*2=128 bytes`), so what we want to do is **placing the 128 bytes in different 32 banks**.
+
+### Swizzling layout
+Let's focus on the **potential bank conflict between shared memory to register** (because in global memory to shared memory, there very low possibility for bank conflict, because it loads **consecutive data in global memory** and store it in **consecutive shared memory**, so they may **naturally span in different banks**), it looks like:
+
+![swizzling](./pic/swizzling.png "Swizzling")
+
+What we want to do is to swizzling the data in shared memory with **same logic column** into **different physical column** (for row-major shape), just like the above image.
+
+### Swizzling algorithm
+
+How could we design a swizzling algorithm in below (it's slight different from the offcial [cutlass cute implementation](https://github.com/NVIDIA/cutlass/blob/release/4.2/include/cute/swizzle.hpp#L42-L53), I'm not very clear about the S bits in the cutlass, **TODO: try to read it carefully later**):
+
+$$
+\text{Swizzle<B, M, S>(logical\_row,logical\_col)}=\text{(physical\_row,physical\_col)}\rArr\text{physical\_offset}
+$$
+
+I'm not very clear about what B, M and S stand for in the above formula, but we could understand them in **3 different bits** in the **logical address space**, it looks like:
+
+![Swizzling algorithm](./pic/swizzling-algorithm.png "Swizzling algorithm")
+
+There're 4 kinds of bits to compose the **Logical address space**, we could understandt it's the address space for a tensor/matrix in shared memory in a SM, for example, for a tile of weight matrix in shared meory with shape as **`64*64 (sub_tile_size * column_per_block)`**, why I call it **`sub_tile_size`** is very interesting, because the tile size may be **a multiple of 64**, but the **`sub_tile_size`** should always be **64** for bank conflict free, please see detail in later.
+
+For the 4 kinds of bits we use it for:
+1. block bits: it defines the index of a block in the whole logical address space.
+2. **B** bits: **B** bits denotes something we called **iRow**, we could understand it's an index for row in the address space, **the max number of B is how many rows in a block**.
+   we define it as **3** in `ld.matrix.m8n8.x4`, because we want to keep it same as **S** to **make all iCol in different banks**.
+   The size of a row is usually **128 bytes** (the size of a wavefront, which could be load/store in a cycle for GPU), which means the **sum of S and M should be 6** (`2^6=64, 64*2 bytes_per_element=128 bytes`)
+3. **S** bits: **S** bits denotes something we called **iCol**, we could understand it's an index for column in the address space, **the max number of S is how many columns in a block**.
+   we define it as **3** in `ld.matrix.m8n8.x4`, because the sum of **S** and **M** is **6**, and we will define **M** as **3**.
+4. **M** bits: **M** bits means we would like to keep how much number of elements we want to **keep them in consecutive**.
+   we define it as **3** in `ld.matrix.m8n8.x4`, because we want each row in the `m8n8` matrix have consecutive **8** (`2^3=8`) elements in columns.
+
+Based on the above defination, we know that we will define all **B, M and S** as **3**.
+
+## Simple code snippet (not optimal, bank conflicts exist)
 There is a case it use **1** thread block and **32** threads in this block to load a `16*16` matrix with `m8n8.x4`, please compile it with `nvcc -arch=sm_80 ldmatrix.cu`:
 
 <details>
@@ -170,3 +222,7 @@ At lane 0, the 7th reg is 137.000000
 
 ## Reference
 [Official doc](https://docs.nvidia.com/cuda/parallel-thread-execution/#warp-level-matrix-instructions-ldmatrix)
+[A blog](https://zhuanlan.zhihu.com/p/697228676)
+[A blog](https://zhuanlan.zhihu.com/p/18702585291)
+[A blog](https://zhuanlan.zhihu.com/p/671419093) about swizzle
+[A blog](https://leimao.github.io/blog/CuTe-Swizzle/) about cute swizzle
