@@ -62,17 +62,23 @@ What we want to do is to swizzling the data in shared memory with **same logic c
 How could we design a swizzling algorithm in below (it's slight different from the offcial [cutlass cute implementation](https://github.com/NVIDIA/cutlass/blob/release/4.2/include/cute/swizzle.hpp#L42-L53), I'm not very clear about the S bits in the cutlass, **TODO: try to read it carefully later**):
 
 $$
-\text{Swizzle<B, M, S>(logical\_row,logical\_col)}=\text{(physical\_row,physical\_col)}\rArr\text{physical\_offset}
+\begin{align*}
+& \text{Swizzle}\langle\text{B, M, S}\rangle\text{(logicalOffset)} && \\
+& \implies \text{(logicalRow, logicalCol)} && \\
+& \implies \text{(physicalRow, physicalCol)} && \\
+& \implies\text{physicalOffset}
+\end{align*}
 $$
 
 I'm not very clear about what B, M and S stand for in the above formula, but we could understand them in **3 different bits** in the **logical address space**, it looks like:
 
 ![Swizzling algorithm](./pic/swizzling-algorithm.png "Swizzling algorithm")
 
+#### Key template arguments
 There're 4 kinds of bits to compose the **Logical address space**, we could understandt it's the address space for a tensor/matrix in shared memory in a SM, for example, for a tile of weight matrix in shared meory with shape as **`64*64 (sub_tile_size * column_per_block)`**, why I call it **`sub_tile_size`** is very interesting, because the tile size may be **a multiple of 64**, but the **`sub_tile_size`** should always be **64** for bank conflict free, please see detail in later.
 
 For the 4 kinds of bits we use it for:
-1. block bits: it defines the index of a block in the whole logical address space.
+1. block bits: it defines the index of a block in the whole logical address space, a block comprise two dims: **iRow** and **iCol**, we could understand the two dims are **logical row/col** before swizzling, and become **physical row/col** after swizzling.
 2. **B** bits: **B** bits denotes something we called **iRow**, we could understand it's an index for row in the address space, **the max number of B is how many rows in a block**.
    we define it as **3** in `ld.matrix.m8n8.x4`, because we want to keep it same as **S** to **make all iCol in different banks**.
    The size of a row is usually **128 bytes** (the size of a wavefront, which could be load/store in a cycle for GPU), which means the **sum of S and M should be 6** (`2^6=64, 64*2 bytes_per_element=128 bytes`)
@@ -82,6 +88,60 @@ For the 4 kinds of bits we use it for:
    we define it as **3** in `ld.matrix.m8n8.x4`, because we want each row in the `m8n8` matrix have consecutive **8** (`2^3=8`) elements in columns.
 
 Based on the above defination, we know that we will define all **B, M and S** as **3**.
+
+#### XOR algorithm
+Based on the above template argument we could define the XOR swizzling algorithm more clearly:
+
+$$
+\begin{flalign*}
+& \ \ \ \ \text{Swizzle}\langle\text{B, M, S}\rangle\text{(logicalOffset)} && \\
+& \text{1. Extract the bit feild inside B, M and S, then obtain the } iBlock \text{(block), }iRow\text{(B) and } iCol \text{(S).} && \\
+& \text{2. Swizzle } iRow \text{ and } iCol \text{ in XOR.} && \\
+& \ \ \ \ iCol = iCol \ \oplus \ iRow && \\
+& \text{3. (Optional) Modulo the } iRow \text{ to make it inside the physical row range.} && \\
+& \ \ \ \ iRow = iRow \mod \ physicalRowNumber && \\
+& \text{4. Get final physical offset.} && \\
+& \ \ \ \ \text{physical offset} = iBlock * blockSize + iRow \times stride + iCol &&
+\end{flalign*}
+$$
+
+#### Some tricks in the algorithm
+There are some trickts in the algorithm.
+1. For the **XOR**, because we define the **B, M and S as 3**, each unit take 8 scalars, and there are 8 columns in a row, and 8 rows in a block, its **logical layout for a wavefront** looks like:
+    ![Layout before swizzling](./pic/layout-before-swizzling.png "Layout before swizzling")
+    Therefore we could see for the wavefront all the $iCol$ is $0$, and $iRow$ in $\text{range(0, 8)}$, then afer the **XOR**, we could also make $iCol$ in $\text{range(0, 8)}$, so the wavefront is bank conflict free, it looks like:
+    ![Layout after swizzling](./pic/layout-after-swizzling.png "Layout after swizzling")
+2. For the **XOR**, another question came here, is there any possiable that swizzling algorithm to some wavefront's data in same physical address, in other word, **How the swizzling algorithm make no conflict among all wavefronts**?
+   The answer is that for the below fomula, it's **surjective** for $iRow$ and $iCol$ in logical and physical format.
+   $$
+   \text{Swizzle}\langle\text{B, M, S}\rangle\text{(logicalRow, logicalCol)}=\text{(physicalRow, physicalCol)}
+   $$
+   It looks like:
+   ![Layout after swizzling 4 wavefront](./pic/layout-after-swizzling-4-wavefronts.png "Layout after swizzling 4 wavefront")
+    We could understand this in two dimesions:
+    1. Intra-wavefront, after swizzling each unit have **different** $iCol$, so there is no any address conflict.
+    2. Inter-wavefront, for 8 wavefronts in a same logical row the formula looks like:
+        $$
+        \begin{align*}
+            iCol&=iCol \oplus iRow &&\\
+            &= \text{range((0, 8))} \oplus iRow \ \text{(a const)} &&\\
+            &= \text{range((0, 8))}
+        \end{align*}
+        $$
+        Because the $iRow$ is a const inside a row for 8 wavefront, so it also map the $iCol$ inside in this row from $\text{range((0, 8))}$ to $\text{range((0, 8))}$, so all the unit in a same row is also not address conflict.
+
+
+3. For the above case, we could see above case, we have total `8*8*8=512` scalars, for a `ld.matrix.m8n8.x4` inst, it will load `4*8*8=256` scalars, so in the above case, we actually execute **two** `ld.matrix.m8n8.x4` insts to load all data.
+   But if we **only need to load `256`** scalars, which means the shape of shared memory is `(4, 8 * 8)`, it seems the swizzling will load **out of bound** data.
+   Really? No, here the **optional step** come! It could make the $iRow$ is always in legal address space:
+   $$
+   iRow = iRow \mod \ physicalRowNumber
+   $$
+   After the modulo operation, the physical layout looks like:
+   ![Layout after swizzling 4 wavefront mod row](./pic/layout-after-swizzling-4-wavefronts-mod-row.png "Layout after swizzling 4 wavefront mod row")
+   We could see it just shfit the buttom-half data to up-half to make it works in `(4, 8 * 8)` shared memory.
+
+
 
 ## Simple code snippet (not optimal, bank conflicts exist)
 There is a case it use **1** thread block and **32** threads in this block to load a `16*16` matrix with `m8n8.x4`, please compile it with `nvcc -arch=sm_80 ldmatrix.cu`:
@@ -222,7 +282,11 @@ At lane 0, the 7th reg is 137.000000
 
 ## Reference
 [Official doc](https://docs.nvidia.com/cuda/parallel-thread-execution/#warp-level-matrix-instructions-ldmatrix)
+
 [A blog](https://zhuanlan.zhihu.com/p/697228676)
+
 [A blog](https://zhuanlan.zhihu.com/p/18702585291)
+
 [A blog](https://zhuanlan.zhihu.com/p/671419093) about swizzle
+
 [A blog](https://leimao.github.io/blog/CuTe-Swizzle/) about cute swizzle
