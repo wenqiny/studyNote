@@ -59,7 +59,7 @@ What we want to do is to swizzling the data in shared memory with **same logic c
 
 ### Swizzling algorithm
 
-How could we design a swizzling algorithm in below (it's slight different from the offcial [cutlass cute implementation](https://github.com/NVIDIA/cutlass/blob/release/4.2/include/cute/swizzle.hpp#L42-L53), I'm not very clear about the S bits in the cutlass, **TODO: try to read it carefully later**):
+How could we design a swizzling algorithm in below (it's slight different from the offcial [cutlass cute implementation](https://github.com/NVIDIA/cutlass/blob/release/4.2/include/cute/swizzle.hpp#L42-L53):
 
 $$
 \begin{align*}
@@ -70,22 +70,32 @@ $$
 \end{align*}
 $$
 
-I'm not very clear about what B, M and S stand for in the above formula, but we could understand them in **3 different bits** in the **logical address space**, it looks like:
+There is 3 template arguments: B, M and S stand for in the above formula, we could understand them in **3 different bits** in the **logical address space**, it looks like:
 
 ![Swizzling algorithm](./pic/swizzling-algorithm.png "Swizzling algorithm")
 
 #### Key template arguments
-There're 4 kinds of bits to compose the **Logical address space**, we could understandt it's the address space for a tensor/matrix in shared memory in a SM, for example, for a tile of weight matrix in shared meory with shape as **`64*64 (sub_tile_size * column_per_block)`**, why I call it **`sub_tile_size`** is very interesting, because the tile size may be **a multiple of 64**, but the **`sub_tile_size`** should always be **64** for bank conflict free, please see detail in later.
+There're 4 kinds of bits to compose the **Logical address space**, we could understandt it's the address space for a tensor/matrix in shared memory in a SM, for example, for a tile of weight matrix in shared meory with shape as **`64*64 (sub_tile_size * column_per_block)`**, why I call it **`sub_tile_size`** is very interesting, because the tile size may be **a multiple of 64**, but the **`sub_tile_size`** should always be **64** (for bf16, `sizeof(bf16)*64=128`) for bank conflict free, please see detail in later.
 
 For the 4 kinds of bits we use it for:
-1. block bits: it defines the index of a block in the whole logical address space, a block comprise two dims: **iRow** and **iCol**, we could understand the two dims are **logical row/col** before swizzling, and become **physical row/col** after swizzling.
-2. **B** bits: **B** bits denotes something we called **iRow**, we could understand it's an index for row in the address space, **the max number of B is how many rows in a block**.
-   we define it as **3** in `ld.matrix.m8n8.x4`, because we want to keep it same as **S** to **make all iCol in different banks**.
-   The size of a row is usually **128 bytes** (the size of a wavefront, which could be load/store in a cycle for GPU), which means the **sum of S and M should be 6** (`2^6=64, 64*2 bytes_per_element=128 bytes`)
-3. **S** bits: **S** bits denotes something we called **iCol**, we could understand it's an index for column in the address space, **the max number of S is how many columns in a block**.
-   we define it as **3** in `ld.matrix.m8n8.x4`, because the sum of **S** and **M** is **6**, and we will define **M** as **3**.
-4. **M** bits: **M** bits means we would like to keep how much number of elements we want to **keep them in consecutive**.
-   we define it as **3** in `ld.matrix.m8n8.x4`, because we want each row in the `m8n8` matrix have consecutive **8** (`2^3=8`) elements in columns.
+1. block bits: they're the higher bits in the logical address space. it will not be updated during swizzle algorithm.
+2. **YYY / iRow** bits: **B** bits in the logical space denotes something we called **YYY** (in cute) or **iRow**, we could understand it's an index for row in the address space.
+   it came from the lower B bits called **ZZZ / iCol** (please see details in below) by **shift S bits**, these bits will be used for swizzle in the algorithm.
+3. **ZZZ / iRow** bits: **B** bits denotes something we called **iCol**, we could understand it's an index for column in the address space.
+4. **M** bits: **M** bits means we would like to keep how many number of elements we want to **keep them in consecutive**.
+
+Based on the above defination, for the case `ld.matrix.m8n8.x4`: 
+1. We will define **M** as **3**, because we want each row in the `m8n8` matrix have consecutive **8** (`2^3=8`) elements in columns.
+2. We will define **B** as **3**, because we want **64 elements** (`64*sizeof(bf16)=128 bytes`, 128 bytes is the smem bandwidth, we should **keep each row have the size for 128 bytes in the swizzle algorithm**) in a row, so which means $2^{B + M} = 64 \implies B+M=6$, based on **M** is 3, so we will define **B** as 3.
+3. We will also define **S** as **3**, because **C** should be greater or equal to **B** (because it shift the **B** bits, otherwise there is some overlap), then it was used for swizzle, so it means we should keep either **YYY** or **ZZZ** bits is in `range(0, 8)`, and another one is a const, which makes the algorithm works.
+
+The algorithm code snippet in cute:
+```
+apply(Offset const& offset)
+{
+  return offset ^ shiftr(offset & yyy_msk{}, msk_sft{});   // ZZZ ^= YYY
+}
+```
 
 Based on the above defination, we know that we will define all **B, M and S** as **3**.
 
@@ -120,15 +130,15 @@ There are some trickts in the algorithm.
    ![Layout after swizzling 4 wavefront](./pic/layout-after-swizzling-4-wavefronts.png "Layout after swizzling 4 wavefront")
     We could understand this in two dimesions:
     1. Intra-wavefront, after swizzling each unit have **different** $iCol$, so there is no any address conflict.
-    2. Inter-wavefront, for 8 wavefronts in a same logical row the formula looks like:
-        $$
-        \begin{align*}
-            iCol&=iCol \oplus iRow &&\\
-            &= \text{range((0, 8))} \oplus iRow \ \text{(a const)} &&\\
-            &= \text{range((0, 8))}
-        \end{align*}
-        $$
-        Because the $iRow$ is a const inside a row for 8 wavefront, so it also map the $iCol$ inside in this row from $\text{range((0, 8))}$ to $\text{range((0, 8))}$, so all the unit in a same row is also not address conflict.
+    2. Inter-wavefront, because the $iRow$ is a const inside a row for 8 wavefront, so it also map the $iCol$ inside in this row from $\text{range((0, 8))}$ to $\text{range((0, 8))}$, so all the unit in a same row is also not address conflict.for 8 wavefronts in a same logical row the formula looks like:
+
+$$
+\begin{align*}
+   iCol&=iCol \oplus iRow &&\\
+   &= \text{range((0, 8))} \oplus iRow \ \text{(a const)} &&\\
+   &= \text{range((0, 8))}
+\end{align*}
+$$
 
 
 3. For the above case, we could see above case, we have total `8*8*8=512` scalars, for a `ld.matrix.m8n8.x4` inst, it will load `4*8*8=256` scalars, so in the above case, we actually execute **two** `ld.matrix.m8n8.x4` insts to load all data.
