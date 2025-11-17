@@ -76,7 +76,7 @@ The result is `3:8`
 Then we could combin the two results `(2,2):(24,2)` and `3:8` together to `((2,2), 3):((24,2),8)`.
 
 ### Complement
-It's easy to understand what complement do, it just compute a new `Layout`, which means **how we repeat the original `Layout` to achive the target `Layout`**.
+It's easy to understand what complement do, it just compute a new `Layout`, which means **how we repeat the original `Layout` to get the target `Layout`**.
 
 * `complement(4:1, 24)` is `6:4`. Note that `(4,6):(1,4)` has cosize `24`. The layout `4:1` is effectively repeated 6 times with `6:4`.
 
@@ -90,5 +90,184 @@ It's easy to understand what complement do, it just compute a new `Layout`, whic
 
 * `complement((2,2):(1,6), 24)` is `(3,2):(2,12)`. Note that `((2,2),(3,2)):((1,6),(2,12))` has cosize `24` and produces unique indices.
 
-### Division (Tiling)
+From the above cases, we could compute complement in serveral steps:
+1. Fill the "**Hole**", like for `complement(6:4, 24)`, the stride is `4`, which means there is a **hole** between each elements, we should add a `4:1` firstly to fill the **hole**.
+2. Repeat to get the final size, like for `complement(4:2, 24)`, we will use `2:1` to fill the **hole** firstly, then we got a layout like `(4,(2):2,(1))`, the `size` of it is `4*2=8`, then we still need a new dim `24/8=3`, which stride is `8`, so the final output is `(2,3):(1,8)`.
 
+### Division (Tiling)
+We could define division with compostion, complement and concatenation:
+
+$A \oslash B := A \circ (B,B^*)$
+
+In cpp code it looks like:
+
+```cpp
+template <class LShape, class LStride,
+          class TShape, class TStride>
+auto logical_divide(Layout<LShape,LStride> const& layout,
+                    Layout<TShape,TStride> const& tiler)
+{
+  return composition(layout, make_layout(tiler, complement(tiler, size(layout))));
+}
+```
+
+#### How to understand division
+We could think this question from the **unit perspective**, because for the `layout`, we could define its unit as $\frac{\text{index}}{\text{coordinate}}$ (the *coordinate* is not a tuple, but just an integer translated from the tuple), which means it's a map from *coordinate* to *index*, that's just what `Layout` do.
+
+But for the `tiler`, it's actually a map between *coordinate* and *coordinate*, so its unit is $\frac{\text{coordinate}}{\text{coordinate}}$, therefore we could define the division as:
+
+$\frac{\text{layout}}{\text{tiler}}=\frac{\frac{\text{index}}{\text{coordinate}}}{\frac{\text{coordinate}}{\text{coordinate}}}=\frac{\text{index}}{\text{coordinate}}$
+
+After the division, the unit is still $\frac{\text{index}}{\text{coordinate}}$.
+
+#### Case study
+We could see two cases: 1-D and 2-D.
+
+##### 1-D case
+Consider tiling the 1-D layout `A = (4,2,3):(2,1,8)` with the tiler `B = 4:2`, we could do computation in next steps:
+
+```
+A = (4,2,3):(2,1,8)
+B = 4:2
+
+B* = (2,3):(1,8)
+(B,B*) = (4,(2,3)):(2,(1,8))
+A o (B,B*) = (A o B, A o B*, ...)
+           = ((4,2,3):(2,1,8) o 4:2, (4,2,3):(2,1,8) o 2:1, (4,2,3):(2,1,8) o 3:8)
+           = ((2,2):(4,1), 2:2, 3:8)
+           = ((2,2),(2,3):(4,1),(2,8))
+```
+
+We could illustrate it as:
+![Division 1-D](./pic/Layout-algebra-division-1d.png)
+
+In the figure, we could see the gray elements is the `tiler`, their *coordinate* is `B = 4:2`, which just map a *coordinate* to a new *coordinate* in `4` elements with stride as `2`.
+
+Then the division will do:
+1. Compact all the elements in the gray as together as the first cluster.
+2. Repeat the cluster multiple times to get the same shape as `A`.
+   
+##### 2-D case
+Consider a 2-D layout `A = (9,(4,8)):(59,(13,1))` and want to apply `3:3` down the columns (mode-0) and `(2,4):(1,8)` across the rows (mode-1). This means the tiler can be written as `B = <3:3, (2,4):(1,8)>`.
+
+We could compute it in these steps:
+```
+A = (9,(4,8)):(59,(13,1))
+B = <3:3,(2,4):(1,8)>
+
+We could compute this in both row and column dims and then split A/B to A/Br and A/Bc
+
+Ar = (4,8):(13,1)
+Ac = 9:59
+
+Br = (2,4):(1,8)
+Bc = 3:3
+
+Br* = 4:2
+Bc* = 3:1
+
+Ar o (Br,Br*) = (Ar o Br, Ar o Br*)
+              = ((4,8):(13,1) o (2,4):(1,8), (4,8):(13,1) o 4:2)
+              = ((4,8):(13,1) o 2:1, (4,8):(13,1) o 4:8, (4,8):(13,1) o 4:2)
+              = (2:13, 4:2, (2,2):(26,1))
+              = ((2,4),(2,2):(13,2),(26,1))
+
+Ac o (Bc,Bc*) = (Ac o Bc, Ac o Bc*)
+              = (9:59 o 3:3, 9:59 o 3:1)
+              = (3:177, 3:59)
+              = ((3,3):(177,59))
+
+Combain them together we got:
+((3,3),(2,4),(2,2):(177,59),(13,2),(26,1))
+```
+
+We could illustrate it as:
+![Division 2-D](./pic/Layout-algebra-division-2d.png)
+
+We could also see it do two steps:
+1. Compact gray elements
+2. Repeat the compacted cluster.
+
+### Product
+Just like division we could define product with some basic algebra:
+
+$A \otimes B := (A, A^* \circ B)$
+
+and implemented in CuTe as
+```cpp
+template <class LShape, class LStride,
+          class TShape, class TStride>
+auto logical_product(Layout<LShape,LStride> const& layout,
+                     Layout<TShape,TStride> const& tiler)
+{
+  return make_layout(layout, composition(complement(layout, size(layout)*cosize(tiler)), tiler));
+}
+```
+
+From the above formula, we could understand the product in two steps:
+1. Take the `A` as a cpoy to as the base.
+2. Repeat `A` the composition of `A*` to `B` times (`A*` at here is the complement of the `size(A)*cosize(B)`, because we want to repeat `size(A)` for `cosize(B)` times).
+
+#### Case study
+Just like division, we use two cases:
+
+##### 1-D case
+Consider the 1-D layout `A = (2,2):(4,1)` according to `B = 6:1`. Informally, this means that we have a 1-D layout of 4 elements defined by A and we want to reproduce it 6 times.
+
+```
+A = (2,2):(4,1)
+B = 6:1
+
+size(A)*cosize(B)=4*6=24
+A* = (2,3):(2,8)
+
+A* o B = ((2,3):(2,8) o 6:1)
+       = ((2,3):(2,8))
+
+Concatenate A and A* o B:
+((2,2),(2,3):(4,1),(2,8))
+```
+
+We could illustrate it as:
+![Product 1-D](./pic/Layout-algebra-product-1d.png)
+
+We could see it do it in two steps:
+1. Copy `A` into the gray element in `B`.
+2. Repeat the copy for all the element in `B`.
+
+##### 2-D case
+Consider the 2-D layout `A = (2,5):(5,1)` and `B = <3:5, 4:6>`.
+
+We could compute simlar as 2-D case for division:
+```
+A = (2,5):(5,1)
+B = <3:5, 4:6>
+
+We could compute this in both row and column dims and then split A/B to A/Br and A/Bc
+
+Ar = 5:1
+Ac = 2:5
+
+Br = 4:6
+Bc = 3:5
+
+size(Ar)*cosize(Br)=5*(3*6+1)=95
+size(Ac)*cosize(Bc)=10*(2*5+1)=110
+Ar* = 19:5
+Ac* = (5,11):(1,10) 
+
+Ar* o Br = 19:5 o 4:6
+         = 
+
+Ac o (Bc,Bc*) = (Ac o Bc, Ac o Bc*)
+              = (9:59 o 3:3, 9:59 o 3:1)
+              = (3:177, 3:59)
+              = ((3,3):(177,59))
+
+Combain them together we got:
+((3,3),(2,4),(2,2):(177,59),(13,2),(26,1))
+```
+
+
+### Reference
+[Official doc](https://github.com/NVIDIA/cutlass/blob/v4.0.0/media/docs/cpp/cute/02_layout_algebra.md)
