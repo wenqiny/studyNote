@@ -96,7 +96,7 @@ auto same_r = make_layout(composition(layout<0>(a), get<0>(tiler)),
 
 We're computing `(12,(4,8)):(59,(13,1)) o <3:4, 8:2> = (_3,(2,4)):(236,(26,1))`, there is a figure:
 
-![Composition 1](./pic/Layout-algebra-composition-1.png)
+![Composition 1](./pic/02-layout-algebra-composition-1.png)
 
 We could see we just select serveral elements in `A` according to `B`, that's what composition do, it just map the *domain* in `B` to the *codomain* in `A`.
 
@@ -118,7 +118,7 @@ auto result = composition(a, tiler);
 
 It's `(12,(4,8)):(59,(13,1)) o <3, 8> = (_3,(2,4)):(236,(26,1))`, there is a figure:
 
-![Composition 2](./pic/Layout-algebra-composition-2.png)
+![Composition 2](./pic/02-layout-algebra-composition-2.png)
 
 It just select the 3x8 space at the left-top of `A` according to `B`, it's also a map between the *domain* of `B` to *codomain* of `A`.
 
@@ -186,7 +186,7 @@ A o (B,B*) = (A o B, A o B*, ...)
 ```
 
 We could illustrate it as:
-![Division 1-D](./pic/Layout-algebra-division-1d.png)
+![Division 1-D](./pic/02-layout-algebra-division-1d.png)
 
 In the figure, we could see the gray elements is the `tiler`, their *coordinate* is `B = 4:2`, which just map a *coordinate* to a new *coordinate* in `4` elements with stride as `2`.
 
@@ -229,7 +229,7 @@ Combain them together we got:
 ```
 
 We could illustrate it as:
-![Division 2-D](./pic/Layout-algebra-division-2d.png)
+![Division 2-D](./pic/02-layout-algebra-division-2d.png)
 
 We could also see it do two steps:
 1. Compact gray elements
@@ -276,7 +276,7 @@ Concatenate A and A* o B:
 ```
 
 We could illustrate it as:
-![Product 1-D](./pic/Layout-algebra-product-1d.png)
+![Product 1-D](./pic/02-layout-algebra-product-1d.png)
 
 We could see it do it in two steps:
 1. Copy `A` into the gray element in `B`.
@@ -306,7 +306,7 @@ And we could also combain some dims to write it also
 ```
 
 Let's illustrate it in the below figure:
-![Product 2-D](./pic/Layout-algebra-product-2d.png)
+![Product 2-D](./pic/02-layout-algebra-product-2d.png)
 
 **TODO: Not very clear about the blocked_product and raked_product, and how to do product in x and y dims, try to review later.**
 
