@@ -75,6 +75,53 @@ The result is `3:8`
 
 Then we could combin the two results `(2,2):(24,2)` and `3:8` together to `((2,2), 3):((24,2),8)`.
 
+
+#### Case
+There are two cases for composition:
+
+```
+// (12,(4,8)):(59,(13,1))
+auto a = make_layout(make_shape (12,make_shape ( 4,8)),
+                     make_stride(59,make_stride(13,1)));
+// <3:4, 8:2>
+auto tiler = make_tile(Layout<_3,_4>{},  // Apply 3:4 to mode-0
+                       Layout<_8,_2>{}); // Apply 8:2 to mode-1
+
+// (_3,(2,4)):(236,(26,1))
+auto result = composition(a, tiler);
+// Identical to
+auto same_r = make_layout(composition(layout<0>(a), get<0>(tiler)),
+                          composition(layout<1>(a), get<1>(tiler)));
+```
+
+We're computing `(12,(4,8)):(59,(13,1)) o <3:4, 8:2> = (_3,(2,4)):(236,(26,1))`, there is a figure:
+
+![Composition 1](./pic/Layout-algebra-composition-1.png)
+
+We could see we just select serveral elements in `A` according to `B`, that's what composition do, it just map the *domain* in `B` to the *codomain* in `A`.
+
+Another case:
+
+```
+// (12,(4,8)):(59,(13,1))
+auto a = make_layout(make_shape (12,make_shape ( 4,8)),
+                     make_stride(59,make_stride(13,1)));
+// (3, 8)
+auto tiler = make_shape(Int<3>{}, Int<8>{});
+// Equivalent to <3:1, 8:1>
+// auto tiler = make_tile(Layout<_3,_1>{},  // Apply 3:1 to mode-0
+//                        Layout<_8,_1>{}); // Apply 8:1 to mode-1
+
+// (_3,(4,2)):(59,(13,1))
+auto result = composition(a, tiler);
+```
+
+It's `(12,(4,8)):(59,(13,1)) o <3, 8> = (_3,(2,4)):(236,(26,1))`, there is a figure:
+
+![Composition 2](./pic/Layout-algebra-composition-2.png)
+
+It just select the 3x8 space at the left-top of `A` according to `B`, it's also a map between the *domain* of `B` to *codomain* of `A`.
+
 ### Complement
 It's easy to understand what complement do, it just compute a new `Layout`, which means **how we repeat the original `Layout` to get the target `Layout`**.
 
@@ -236,38 +283,34 @@ We could see it do it in two steps:
 2. Repeat the copy for all the element in `B`.
 
 ##### 2-D case
-Consider the 2-D layout `A = (2,5):(5,1)` and `B = <3:5, 4:6>`.
+Consider the 2-D layout `A = (2,5):(5,1)` and `B = (3,4):(1,3)`.
 
 We could compute simlar as 2-D case for division:
 ```
 A = (2,5):(5,1)
-B = <3:5, 4:6>
+B = (3,4):(1,3)
 
-We could compute this in both row and column dims and then split A/B to A/Br and A/Bc
 
-Ar = 5:1
-Ac = 2:5
+size(A)*cosize(B)=10*(2*1+3*3+1)=120
+A* = (12:10)
 
-Br = 4:6
-Bc = 3:5
-
-size(Ar)*cosize(Br)=5*(3*6+1)=95
-size(Ac)*cosize(Bc)=10*(2*5+1)=110
-Ar* = 19:5
-Ac* = (5,11):(1,10) 
-
-Ar* o Br = 19:5 o 4:6
-         = 
-
-Ac o (Bc,Bc*) = (Ac o Bc, Ac o Bc*)
-              = (9:59 o 3:3, 9:59 o 3:1)
-              = (3:177, 3:59)
-              = ((3,3):(177,59))
+A* o B = (12:10) o (3,4):(1,3)
+       = ((12:10) o (3,1), (12:10) o (4,3))
+       = (3:10, 4:30)
 
 Combain them together we got:
-((3,3),(2,4),(2,2):(177,59),(13,2),(26,1))
+((2,5),(3,4):(5,1),(10,30))
+
+And we could also combain some dims to write it also
+(6,(5,4):5,(1,30))
 ```
 
+Let's illustrate it in the below figure:
+![Product 2-D](./pic/Layout-algebra-product-2d.png)
+
+**TODO: Not very clear about the blocked_product and raked_product, and how to do product in x and y dims, try to review later.**
+
+We could see it just repeat the gray parts by 3x4 times.
 
 ### Reference
 [Official doc](https://github.com/NVIDIA/cutlass/blob/v4.0.0/media/docs/cpp/cute/02_layout_algebra.md)
