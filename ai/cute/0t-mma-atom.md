@@ -56,3 +56,118 @@ Traits have more higher level contents than the `Operation`, like:
 * `CLayout`: Mapping of (thread,value) pairs to coordinates in the MxN C matrix
 
 It cares more about how the data for the whole MMA in lower level storage, like the data type and the `Layout`.
+
+
+### Case study
+
+In the below we will use a case for `SM70_8x8x4_F32F16F16F32_NT` as a case for discussing.
+
+We could use `print_latex` to get the figure:
+
+![SM70_8x8x4_F32F16F16F32_NT](./pic/0t-mma-atom-case.png)
+
+We will discuss the `TV Layout` for A, B and C (**NOTE: for this MMA, it use T0,1,2,3 and T16,17,18,19, follow convention, we could T16,17,18,19 as T4,5,6,7 in below**).
+
+#### A and B
+
+There is a feature for the operation called "NT", we will discuss two cases for it in below:
+
+![MMA-A-B](./pic/0t-mma-atom-case-AB.png)
+
+##### TN case
+First let's see the A for TN case (right side figure).
+
+We understand the `TV Layout` is a function from *coordinate* of `(thread, value)` to *coordinate* of `(m, n)` in the `Tensor` (**it's just a logical tensor, which don't replaces the data in any storage, like SRAM or GMEM**).
+
+Therefore the A of TN case should be:
+
+```
+// 8 in shape is for threads, 4 in shape for values
+ALayout = (8,4):(1,8)
+```
+
+And if we just rotate it for 90 degree, we could see the B of TN is also:
+
+```
+// 8 in shape is for threads, 4 in shape for values
+BLayout = (8,4):(1,8)
+```
+
+We could illustrate it as:
+![NT-AB](./pic/0t-mma-atom-case-NT-AB.png)
+
+##### NT case
+Just like the TN case, we could get the `TV Layout` of A and B:
+
+```
+// first (4,2) in shape is for threads, 4 in shape for values
+ALayout = (4,2),4:(8,4),1
+BLayout = (4,2),4:(8,4),1
+```
+
+We could illustrate it as:
+![TN-AB](./pic/0t-mma-atom-case-TN-AB.png)
+
+##### Summary
+
+If we compare the `NT` and `TN` case, we could see the green logical `Tensor` have not changed, because **it's just the logical shape, we couldn't change it for the MMA**, but if we change the `NT` and `TN` it will select a differnet `TV Layout`, then it **ask different threads to load different values**.
+
+#### C
+For C there not about `TN` and `NT`, because they will generate same `Layout` of C, it looks like:
+
+![MMA-C](./pic/0t-mma-atom-case-C.png)
+
+From the above figure we could define the `TV Layout` as:
+
+```
+// first (2,2,2) in shape is for threads, later (2,2,2) in shape for values
+CLayout = (2,2,2),(2,2,2):(1,16,4),(8,2,32)
+```
+
+### Hopper MMA
+**TODO: I don't have Hopper device, so I don't read this section.**
+
+### Tiled MMAs
+
+This section is about the Tiled MMA, it try to expand the `MMA atom` in two dimensions:
+1. Using more warps, like allocate `2` or `4` warps in a thread block to do multiple MMA simultaneously.
+2. Ask each warp to do a loop for run MMA multiple times.
+
+If we define MMA as:
+
+```
+MMA_Atom mma = MMA_Atom<SM70_8x8x4_F32F16F16F32_NT>{};
+print_latex(mma);
+```
+
+That's equivalent to:
+
+```
+TiledMMA mma = make_tiled_mma(SM70_8x8x4_F32F16F16F32_NT{},
+                              Layout<Shape<_1,_1,_1>>{},   // Layout of Atoms
+                              Tile<_8,_8,_4>{});           // Tiler
+print_latex(mma);
+```
+
+We could see:
+
+![TiledMMA-Atom](./pic/0t-mma-atom-tiledMMA-atom.png)
+
+It's just a single `MMA atom` without multiple warps and loop iteration.
+
+Then we could define another MMA as:
+
+```
+TiledMMA mma = make_tiled_mma(SM70_8x8x4_F32F16F16F32_NT{},
+                              Layout<Shape <_2,_2>,
+                                      Stride<_2,_1>>{});   // 2x2 n-major layout of Atoms
+print_latex(mma);
+```
+
+We will see:
+
+![TiledMMA-2x2](./pic/0t-mma-atom-tiledMMA-2x2.png)
+
+We could see now we have 4 of `8x8x4` MMAs, it's a 16x16x4 MMA.
+
+**TODO: The left part is about reapet the MMA, but there is a question for the m8n8k4 case, why we repeat it then we will use the unused thread T4-T7 and T20-23?? Because for Ampere GPU, the m16n8k16 seems use all 32 threads in a warp, so the repeat is slightly different with here, try to figure it out later.**
