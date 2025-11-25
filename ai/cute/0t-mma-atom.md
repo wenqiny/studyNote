@@ -171,3 +171,37 @@ We will see:
 We could see now we have 4 of `8x8x4` MMAs, it's a 16x16x4 MMA.
 
 **TODO: The left part is about reapet the MMA, but there is a question for the m8n8k4 case, why we repeat it then we will use the unused thread T4-T7 and T20-23?? Because for Ampere GPU, the m16n8k16 seems use all 32 threads in a warp, so the repeat is slightly different with here, try to figure it out later.**
+
+### ValLayoutSrc/Des for LDSM
+We will use something like `SM75_U32x4_LDSM_N` to utilize `ldmatrix` inst to load data from SMEM to register files, it may use something like `ValLayoutSrc/Des`, it's slightly different with `TV layout`.
+
+we could define it as:
+
+```
+using s2r_copy_op = SM75_U32x4_LDSM_N;
+using s2r_copy_traits = Copy_Traits<s2r_copy_op>;
+using s2r_copy_atom = Copy_Atom<s2r_copy_traits, T>;
+using S2RCopyAtomA = s2r_copy_atom;
+```
+
+Then we try to print `S2RCopyAtomA`:
+
+```
+S2RCopyAtomA{}: Copy_Atom
+ThrID:        _32:_1
+ValLayoutSrc: (_32,_8):(_8,_1)
+ValLayoutDst: (_32,(_2,_4)):(_2,(_1,_64))
+ValLayoutRef: (_32,(_2,_4)):(_2,(_1,_64))
+ValueType:    16b
+```
+
+The `ThrID` means there is 32 threads to call this `ldmatrix` inst.
+
+The `ValLayoutSrc` just means each thread will load `8 consercutive elements (128 bits / 16 bytes)`, but the `_8` in the stride doesn't make any sense because we will pass an address to `ldmatrix` inst in each thread to tell it the start address for each consercutive 8 elements.
+
+The `ValLayoutDst` and `ValLayoutRef` means there're `32 threads`, and each thread loads `2x4=8` elements:
+1. The stride `2` means each thread have a `2` as stride between each others in a `8x8` matrix.
+2. The stride `1` means there're `2` elements are adjacent.
+3. The stride `64` means there're `4` matrics, and each of them is `8x8` so the stride is `64`.
+
+All the stride is just logical and match the define of the `ldmatrix` in NV doc.
